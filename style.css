@@ -20,3 +20,26 @@
     padding: 12px 24px; /* Some padding */
     font-size: 16px; /* Set a font-size */
 }
+body {
+    font-family: 'Arial', sans-serif;
+    font-size: 17px;
+    background-color: #f4f4f4;
+    margin: 20px;
+    text-align: center;
+  }
+
+
+  button {
+    font-size: 1.2em;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: #a44eb3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  button:hover {
+    background-color: #45a049;
+  }

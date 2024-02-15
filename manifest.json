@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Profile Opener",
-  "version": "1.0",
+  "version": "3.0",
   "description": "Open LinkedIn Profiles",
   "permissions": [
     "tabs"
@@ -13,9 +13,10 @@
   "background": {
     "service_worker": "background.js"
   },
+  
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["content_script.js"],
       "css": ["style.css"],
       "run_at": "document_end"

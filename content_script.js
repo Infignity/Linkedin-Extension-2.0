@@ -9,7 +9,18 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.action === "executeContentScript") {
         clearLocalStorage(STORAGE_KEY);
         blurPage();
-        executeContentScript(message.listName);
+        setTimeout(() => {
+            executeContentScript(message.listName);
+        }, 3000);
+        
+    }else  if (message.action === "start") {
+        console.log("Starting")    
+    chrome.runtime.sendMessage({
+        action: "GetURLs"  
+    });
+    }else  if (message.action === "stop"){
+
+        hideProcessingOverlay();
     }
 });
 
@@ -20,7 +31,7 @@ function executeContentScript(listName) {
     if (!resultsContainer) {
         console.log("Results container not found!");
         console.error("Results container not found!");
-        removeBlur(listName);
+        hideProcessingOverlay();
         return;
     }
 
@@ -82,7 +93,7 @@ function fetchLinkedinCompanies(listName) {
             console.log("Page", click);
         } else {
             console.log("Reached Maximum Pages.");
-            removeBlur(listName);
+            nexturl(listName);
         }
     }
 
@@ -90,7 +101,7 @@ function fetchLinkedinCompanies(listName) {
         setTimeout(loadNextPage, delayBeforeNextPage);
     } else {
         console.log("No more pages to load.");
-        removeBlur(listName);
+        nexturl(listName);
     }
 }
 
@@ -134,13 +145,6 @@ function hideProcessingOverlay() {
     }
 }
 
-function removeBlur(listName) {
-    const linkedinCompanies = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    console.log('Received data in background:', { listName, linkedinCompanies });
-
-    saveDataToFile(linkedinCompanies, listName);
-    hideProcessingOverlay();
-}
 
 function saveDataToFile(data, listName) {
     const jsonString = JSON.stringify(data, null, 2);
@@ -155,4 +159,17 @@ function saveDataToFile(data, listName) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
+}
+
+
+function nexturl(listName){
+    const linkedinCompanies = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    console.log('Received data in background:', { listName, linkedinCompanies });
+
+    saveDataToFile(linkedinCompanies, listName);
+
+    chrome.runtime.sendMessage({
+        action: "opennexturl",
+        
+    });
 }
