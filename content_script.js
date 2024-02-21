@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'exlinkedinCompanies';
+const STORAGE_KEY = 'exlinkedinPeople';
 let click = 2;
 const maxpage = 5;
 const scrollInterval = 2000;
@@ -47,7 +47,7 @@ function executeContentScript(listName) {
         scrollsCompleted++;
 
         if (scrollsCompleted === totalScrolls) {
-            fetchLinkedinCompanies(listName);
+            fetchLinkedInPeople(listName);
         }
     }
 
@@ -56,30 +56,42 @@ function executeContentScript(listName) {
     }
 }
 
-function fetchLinkedinCompanies(listName) {
-    const companies = document.querySelectorAll('.artdeco-entity-lockup--size-4');
+function fetchLinkedInPeople(listName) {
+    const profiles = document.querySelectorAll('.flex.flex-column');
 
-    const linkedinCompanies = Array.from(companies)
-        .map(company => {
-            const companyLink = company.querySelector('.artdeco-entity-lockup__title a')?.getAttribute('href');
-            const companyName = company.querySelector('.artdeco-entity-lockup__title a')?.textContent.trim();
-            const photoUrl = company.querySelector('.artdeco-entity-lockup__image img')?.getAttribute('src');
-            const industry = company.querySelector('.artdeco-entity-lockup__subtitle span[data-anonymize="industry"]')?.textContent.trim();
-            const employeesLink = company.querySelector('.artdeco-entity-lockup__subtitle a');
-            const employeesCount = employeesLink?.textContent.trim();
+    const linkedinPeople = Array.from(profiles)
+        .filter(profile => {
+            const name = profile.querySelector('.artdeco-entity-lockup__title span')?.textContent?.trim();
+            return name !== undefined;
+        })
+        .map(profile => {
+            const profileLink = profile.querySelector('.artdeco-entity-lockup__title a')?.getAttribute('href');
+            const name = profile.querySelector('.artdeco-entity-lockup__title span')?.textContent.trim();
+            const photoUrl = profile.querySelector('.artdeco-entity-lockup__image img')?.getAttribute('src');
+            const titleElement = profile.querySelector('.artdeco-entity-lockup__subtitle span[data-anonymize="title"]');
+            const title = titleElement?.textContent?.trim();
+            const orgLinkElement = profile.querySelector('.artdeco-entity-lockup__subtitle a');
+            const organizationName = orgLinkElement?.textContent.trim();
+            const organizationLinkedInUid = orgLinkElement?.getAttribute('href')?.match(/\/company\/(\d+)/)?.[1];
+
+            const locationElement = profile.querySelector('.artdeco-entity-lockup__caption');
+            const presentRawAddress = locationElement?.textContent.trim();
 
             return {
-                href: `https://www.linkedin.com${companyLink}`,
-                name: companyName,
+                href: `https://www.linkedin.com${profileLink}`,
+                name,
                 photo_url: photoUrl,
-                industry: industry,
-                employees_count: employeesCount,
+                organization_name: organizationName,
+                organization_linkedin_uid: organizationLinkedInUid,
+                title,
+                present_raw_address: presentRawAddress,
             };
         });
 
-    console.log("LinkedIn companies captured:", linkedinCompanies);
 
-    updateLocalStorage(linkedinCompanies);
+        console.log("LinkedIn people captured:", linkedinPeople);
+
+        updateLocalStorage(linkedinPeople);
 
     const nextPageButton = document.querySelector('.artdeco-pagination__button--next');
 
@@ -147,9 +159,9 @@ function hideProcessingOverlay() {
 
 
 function saveDataToFile(data, listName) {
-    const jsonString = JSON.stringify(data, null, 2);
+    const jsonString = JSON.stringify(data, null, 2); 
     const blob = new Blob([jsonString], { type: 'application/json' });
-    const timestamp = new Date().toISOString().replace(/[-:]/g, '');
+    const timestamp = new Date().toISOString().replace(/[-:]/g, ''); 
     const filename = `${listName}_${timestamp}.json`;
 
     const a = document.createElement('a');
@@ -163,10 +175,18 @@ function saveDataToFile(data, listName) {
 
 
 function nexturl(listName){
-    const linkedinCompanies = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    console.log('Received data in background:', { listName, linkedinCompanies });
+    const linkedinPeople = JSON.parse(localStorage.getItem('exlinkedinPeople'));
+    console.log('Received data in background:', { listName, linkedinPeople });
 
-    saveDataToFile(linkedinCompanies, listName);
+    saveDataToFile(linkedinPeople, listName);
+
+    chrome.runtime.sendMessage({
+        action: "contentToBackground",
+        data: {
+            listName,
+            linkedinPeople
+        }
+    });
 
     chrome.runtime.sendMessage({
         action: "opennexturl",
