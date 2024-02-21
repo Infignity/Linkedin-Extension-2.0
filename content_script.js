@@ -1,8 +1,8 @@
 const STORAGE_KEY = 'exlinkedinPeople';
 let click = 2;
-const maxpage = 5;
+const maxpage = 101;
 const scrollInterval = 2000;
-const delayBeforeNextPage = 7000;
+const delayBeforeNextPage = 5000;
 const loadPage = 7000;
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
