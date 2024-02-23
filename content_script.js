@@ -118,6 +118,7 @@ function fetchLinkedInPeople(listName) {
     }
 
     if (nextPageButton && !nextPageButton.hasAttribute('disabled')) {
+        console.log("We will go to next page in 5 seconds")
         setTimeout(loadNextPage, delayBeforeNextPage);
     } else {
         console.log("No more pages to load.");
