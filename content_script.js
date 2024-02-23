@@ -4,6 +4,9 @@ const maxpage = 101;
 const scrollInterval = 2000;
 const delayBeforeNextPage = 5000;
 const loadPage = 7000;
+const restart_time = 5000;
+const max_restart = 20;
+let restart = 0;
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.action === "executeContentScript") {
@@ -12,47 +15,53 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         setTimeout(() => {
             executeContentScript(message.listName);
         }, 3000);
-        
-    }else  if (message.action === "start") {
-        console.log("Starting")    
-    chrome.runtime.sendMessage({
-        action: "GetURLs"  
-    });
-    }else  if (message.action === "stop"){
-
+    } else if (message.action === "start") {
+        console.log("Starting");
+        chrome.runtime.sendMessage({
+            action: "GetURLs"
+        });
+    } else if (message.action === "stop") {
+        console.log(message.message);
         hideProcessingOverlay();
     }
 });
 
 function executeContentScript(listName) {
-    console.log('List Name:', listName);
+   
 
     const resultsContainer = document.querySelector('#search-results-container');
-    if (!resultsContainer) {
-        console.log("Results container not found!");
-        console.error("Results container not found!");
-        hideProcessingOverlay();
-        return;
-    }
+    if (resultsContainer) {
+        const totalScrolls = document.querySelectorAll(".artdeco-list__item.pl3.pv3").length;
+        console.log('List Name:', listName);
+        console.log("Total Scrolls: ", totalScrolls);
 
-    const totalScrolls = document.querySelectorAll(".artdeco-list__item.pl3.pv3").length;
-    console.log("Total Scrolls: ", totalScrolls);
+        let scrollsCompleted = 0;
 
-    let scrollsCompleted = 0;
+        function handleScroll() {
+            resultsContainer.scrollBy(0, 250);
+            console.log("Scrolled:", scrollsCompleted + 1, "times");
 
-    function handleScroll() {
-        resultsContainer.scrollBy(0, 250);
-        console.log("Scrolled:", scrollsCompleted + 1, "times");
+            scrollsCompleted++;
 
-        scrollsCompleted++;
-
-        if (scrollsCompleted === totalScrolls) {
-            fetchLinkedInPeople(listName);
+            if (scrollsCompleted === totalScrolls) {
+                fetchLinkedInPeople(listName);
+            }
         }
-    }
 
-    for (let i = 0; i < totalScrolls; i++) {
-        setTimeout(handleScroll, i * scrollInterval + getRandomDelay());
+        for (let i = 0; i < totalScrolls; i++) {
+            setTimeout(handleScroll, i * scrollInterval + getRandomDelay());
+        }
+    } else {
+        console.log("Page load issue. Waiting for automatic restart");
+        if (restart < max_restart) {
+            setTimeout(() => {
+                executeContentScript(listName);
+            }, restart_time);
+            restart++;
+        } else {
+            console.log("Network issue. Please check your network");
+            hideProcessingOverlay();
+        }
     }
 }
 
@@ -88,10 +97,9 @@ function fetchLinkedInPeople(listName) {
             };
         });
 
+    console.log("LinkedIn people captured:", linkedinPeople);
 
-        console.log("LinkedIn people captured:", linkedinPeople);
-
-        updateLocalStorage(linkedinPeople);
+    updateLocalStorage(linkedinPeople);
 
     const nextPageButton = document.querySelector('.artdeco-pagination__button--next');
 
@@ -113,6 +121,7 @@ function fetchLinkedInPeople(listName) {
         setTimeout(loadNextPage, delayBeforeNextPage);
     } else {
         console.log("No more pages to load.");
+        console.log("Going to next url");
         nexturl(listName);
     }
 }
@@ -151,17 +160,17 @@ function showProcessingOverlay() {
 }
 
 function hideProcessingOverlay() {
+    restart = 0;
     const processingOverlay = document.querySelector('.processing-overlay');
     if (processingOverlay) {
         processingOverlay.remove();
     }
 }
 
-
 function saveDataToFile(data, listName) {
-    const jsonString = JSON.stringify(data, null, 2); 
+    const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
-    const timestamp = new Date().toISOString().replace(/[-:]/g, ''); 
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '');
     const filename = `${listName}_${timestamp}.json`;
 
     const a = document.createElement('a');
@@ -173,9 +182,8 @@ function saveDataToFile(data, listName) {
     URL.revokeObjectURL(a.href);
 }
 
-
-function nexturl(listName){
-    const linkedinPeople = JSON.parse(localStorage.getItem('exlinkedinPeople'));
+function nexturl(listName) {
+    const linkedinPeople = JSON.parse(localStorage.getItem(STORAGE_KEY));
     console.log('Received data in background:', { listName, linkedinPeople });
 
     saveDataToFile(linkedinPeople, listName);
@@ -186,10 +194,5 @@ function nexturl(listName){
             listName,
             linkedinPeople
         }
-    });
-
-    chrome.runtime.sendMessage({
-        action: "opennexturl",
-        
     });
 }
