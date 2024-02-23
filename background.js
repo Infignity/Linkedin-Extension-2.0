@@ -33,7 +33,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                     if (response.ok) {
                         console.log('POST request successful');
                         console.log('Received data', { listName, linkedinPeople });
-                        openurl();
                     } else {
                         console.error('Unexpected response status:', response.status);
                     }
@@ -54,6 +53,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 return response.json();
             })
             .then(data => {
+                index = 0;
                 console.log('Data:', data);
                 Data = data;
                 openurl();
@@ -61,16 +61,18 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             .catch(error => {
                 console.error('Error during fetch operation:', error);
             });
-    } 
+    } else if(message.action === "opennexturl"){
+        openurl();
+    }
 });
 
 function openurl() {
     if (Data && Data.length > 0) {
         if (Data.length > index) {
             let current_data = Data[index];
-            console.log("Opening Next Url");
+            console.log(`Opening ${index+1} Url`);
             console.log("Current Data:", current_data);
-            console.log(index);
+            console.log("URL index:", index);
             console.log(current_data.salesnav_url);
             if (isLinkedInURL(current_data.salesnav_url)) {
             chrome.tabs.update({ url: current_data.salesnav_url }, (tab) => {
@@ -87,20 +89,18 @@ function openurl() {
            }
          else {
             console.log("Not  a Valid  linkedin URL");
-            index = 0;
             chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'stop',message: "Not  a Valid  linkedin URL" });
               });
             }
         } else {
             console.log("No  More url  to open");
-            index = 0;
             chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'stop',message: "No  More url  to open"});
               });
         }
     } else {
-        console.log("NO URL in the  Sheet to open");
+        console.log("NO URL in the  Sheet to open EMPTY" );
     }
 }
 

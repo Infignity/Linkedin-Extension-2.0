@@ -2,7 +2,7 @@ const STORAGE_KEY = 'exlinkedinPeople';
 let click = 2;
 const maxpage = 101;
 const scrollInterval = 2000;
-const delayBeforeNextPage = 5000;
+const delayBeforeNextPage = 3000;
 const loadPage = 7000;
 const restart_time = 5000;
 const max_restart = 20;
@@ -52,7 +52,7 @@ function executeContentScript(listName) {
             setTimeout(handleScroll, i * scrollInterval + getRandomDelay());
         }
     } else {
-        console.log("Page load issue. Waiting for automatic restart");
+        console.log("Page load issue. Please Wait it will automatically  restart");
         if (restart < max_restart) {
             setTimeout(() => {
                 executeContentScript(listName);
@@ -121,7 +121,7 @@ function fetchLinkedInPeople(listName) {
         setTimeout(loadNextPage, delayBeforeNextPage);
     } else {
         console.log("No more pages to load.");
-        console.log("Going to next url");
+        console.log("Going to next url please wait for 5 seconds");
         nexturl(listName);
     }
 }
@@ -195,4 +195,11 @@ function nexturl(listName) {
             linkedinPeople
         }
     });
+
+    setTimeout(() => {
+        chrome.runtime.sendMessage({
+            action: "opennexturl",
+        });
+        
+    }, 5000);
 }
