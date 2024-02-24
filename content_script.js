@@ -17,6 +17,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         }, 3000);
     } else if (message.action === "start") {
         console.log("Starting");
+        restart = 0;
         chrome.runtime.sendMessage({
             action: "GetURLs"
         });
@@ -161,7 +162,7 @@ function showProcessingOverlay() {
 }
 
 function hideProcessingOverlay() {
-    restart = 0;
+    
     const processingOverlay = document.querySelector('.processing-overlay');
     if (processingOverlay) {
         processingOverlay.remove();

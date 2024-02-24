@@ -1,4 +1,4 @@
-let Data;
+let Data=[];
 let index = 0;
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
@@ -44,6 +44,8 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             console.warn('Linkedinpeople data is not available');
         }
     }else if (message.action === "GetURLs") {
+             Data=[];
+             index = 0;
         console.log("it is working");
         fetch('https://mptools.azurewebsites.net/salesnav_links')
             .then(response => {
@@ -53,7 +55,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 return response.json();
             })
             .then(data => {
-                index = 0;
                 console.log('Data:', data);
                 Data = data;
                 openurl();
@@ -67,8 +68,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 function openurl() {
-    if (Data && Data.length > 0) {
-        if (Data.length > index) {
+     if (Data.length > index) {
             let current_data = Data[index];
             console.log(`Opening ${index+1} Url`);
             console.log("Current Data:", current_data);
@@ -99,9 +99,7 @@ function openurl() {
                 chrome.tabs.sendMessage(tabs[0].id, { action: 'stop',message: "No  More url  to open"});
               });
         }
-    } else {
-        console.log("NO URL in the  Sheet to open EMPTY" );
-    }
+   
 }
 
 function isLinkedInURL(url) {
